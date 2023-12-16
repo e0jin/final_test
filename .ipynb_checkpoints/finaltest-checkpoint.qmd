@@ -6,7 +6,6 @@ execute:
   enabled: true
   cache: false
   freeze: false
-  error: true
 ---
 
 ```{python}
