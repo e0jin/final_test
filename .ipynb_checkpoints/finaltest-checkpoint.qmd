@@ -71,12 +71,6 @@ df_small2 = df_left.merge(df_right)
 
 tidydata3 = df_small2.sort_values('speed').assign(speed_cut = lambda df: pd.qcut(df.speed,4,labels=['매우느림','조금느림','조금빠름','매우빠름']))
 
-layout1 = {
-    'xaxis':{'title':'pickup 시간'},
-    'yaxis':{'title':'요일'}, 
-    'legend':{'title':'평균속력'}
-}
-
 fig1 = px.density_heatmap(
     data_frame = tidydata1,
     x = 'pickup_hour',
@@ -86,16 +80,12 @@ fig1 = px.density_heatmap(
     nbinsy=7,
     height=300
     
-).update_layout(layout1)
+)
 
+fig1.update_xaxes(title_text='pickup 시간')
+fig1.update_yaxes(title_text='요일')
+fig1.update_coloraxes(colorbar_title_text='평균속력')
 
-
-
-layout2 = {
-    'xaxis':{'title':'pickup 시간'},
-    'yaxis':{'title':'요일'}, 
-    'legend':{'title':'평균이동거리'},     
-}
 
 fig2 =px.density_heatmap(
     data_frame = tidydata2,
@@ -105,7 +95,11 @@ fig2 =px.density_heatmap(
     nbinsx=24,
     nbinsy=7,
     height=300
-).update_layout(layout2)
+)
+fig2.update_xaxes(title_text='pickup 시간')
+fig2.update_yaxes(title_text='요일')
+fig2.update_coloraxes(colorbar_title_text='평균이동거리')
+
 
 
 fig3 = px.line_mapbox(
