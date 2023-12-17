@@ -38,6 +38,8 @@ df_feature = df.assign(
     dayofweek = lambda df: df.pickup_datetime.dt.dayofweek
 )
 
+df_small = df[::100].reset_index(drop=True)
+
 tidydata1 = df_feature.pivot_table(
     index = 'dayofweek',
     columns = 'pickup_hour',
@@ -52,7 +54,19 @@ tidydata2 = df_feature.pivot_table(
     aggfunc = 'mean'
 ).stack().reset_index().rename({0:'mean_dist'}, axis = 1)
 
-df_small = df[::100].reset_index(drop=True)
+df_small_feature= df_small.assign(
+    log_trip_duration = np.log(df.trip_duration),
+    pickup_datetime = df.pickup_datetime.apply(pd.to_datetime),
+    dropoff_datetime = df.dropoff_datetime.apply(pd.to_datetime),
+    dist = np.sqrt((df.pickup_latitude-df.dropoff_latitude)**2 + (df.pickup_longitude-df.dropoff_longitude)**2),
+    #---#
+    vendor_id = df.vendor_id.map({1:'A',2:'B'})
+).assign(
+    speed = lambda df: df.dist / df.trip_duration,
+    pickup_hour = lambda df: df.pickup_datetime.dt.hour,
+    dropoff_hour = lambda df: df.dropoff_datetime.dt.hour,
+    dayofweek = lambda df: df.pickup_datetime.dt.dayofweek
+)
 
 pcol = ['pickup_datetime', 'pickup_longitude', 'pickup_latitude', 'pickup_hour']
 dcol = ['dropoff_datetime', 'dropoff_longitude', 'dropoff_latitude', 'dropoff_hour']
@@ -60,11 +74,11 @@ def transform(df):
     pickup = df.loc[:,['id']+pcol].set_axis(['id', 'datetime', 'longitude', 'latitude', 'hour'],axis=1).assign(type = 'pickup')
     dropoff = df.loc[:,['id']+dcol].set_axis(['id', 'datetime', 'longitude', 'latitude', 'hour'],axis=1).assign(type = 'dropoff')
     return pd.concat([pickup,dropoff],axis=0)
-df_left = df_small.drop(pcol+dcol,axis=1)
-df_right = pd.concat([transform(df) for i, df in df_small.groupby('id')]).reset_index(drop=True)
-df_small2 = df_left.merge(df_right)
+df_left = df_small_feature.drop(pcol+dcol,axis=1)
+df_right = pd.concat([transform(df) for i, df in df_small_feature.groupby('id')]).reset_index(drop=True)
+df_small_feature2 = df_left.merge(df_right)
 
-tidydata3 = df_small2.sort_values('speed').assign(평균속력 = lambda df: pd.qcut(df.speed,4,labels=['매우느림','조금느림','조금빠름','매우빠름']))
+tidydata3 = df_small_feature2.sort_values('speed').assign(평균속력 = lambda df: pd.qcut(df.speed,4,labels=['매우느림','조금느림','조금빠름','매우빠름']))
 
 
 fig1 = px.density_heatmap(
@@ -75,6 +89,7 @@ fig1 = px.density_heatmap(
     nbinsx=24,
     nbinsy=7,
     height=300
+)
 
 
 fig2 = px.density_heatmap(
@@ -123,7 +138,6 @@ for i in range(150):
         fig3.data[i]['name'] += ' (path)'
     else:
         fig3.data[i]['name'] += ' (pickup/dropoff)'
-
 
 
 
